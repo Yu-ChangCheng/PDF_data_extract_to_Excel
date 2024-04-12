@@ -1,3 +1,4 @@
+import json
 from pdfminer.layout import LAParams, LTTextBox
 from pdfminer.pdfpage import PDFPage
 from pdfminer.pdfinterp import PDFResourceManager
@@ -5,7 +6,19 @@ from pdfminer.pdfinterp import PDFPageInterpreter
 from pdfminer.converter import PDFPageAggregator
 import pandas as pd
 
-fp = open(r'C:\Users\lcheng\Downloads\MPD.pdf', 'rb')
+# Define the path to the JSON file and the PDF file
+json_path = r'settings.json'
+pdf_path = r'/Users/lcheng/Downloads/Example.pdf'
+
+# Load boxes from the JSON file
+with open(json_path, 'r') as file:
+    boxes = json.load(file)
+
+# Convert string keys from the JSON file to tuples as expected by the script
+boxes = {key: tuple(value) for key, value in boxes.items()}
+
+# Set up PDF reading tools
+fp = open(pdf_path, 'rb')
 rsrcmgr = PDFResourceManager()
 laparams = LAParams()
 device = PDFPageAggregator(rsrcmgr, laparams=laparams)
@@ -14,16 +27,16 @@ pages = PDFPage.get_pages(fp)
 
 
 # Define boxes (Example: {'box_name': (x0, y0, x1, y1)})
-boxes = {
-    'Aircraft Model': (40.033, 153.713675, 106.85308400000002, 480.04184),
-    'Engine Model': (122.245, 153.71417500000032, 202.48306300000002, 480.04283999999996),
-    'LIGHT(A)': (225.902, 344.68397500000003, 363.00790699999993, 478.61283999999995),
-    'Intermediate(C)': (371.023, 344.68397500000003, 506.30226999999996, 478.61283999999995),
-    'Medium (4C)': (225.902, 151.794075, 362.507731, 297.74784),
-    'Heavy (8C)': (371.738, 151.794075, 508.300607, 297.74784),
-    'Additonal information': (40.033, 58.313375, 829.6429730000018, 120.09204),
-    'Airline Name': (554.748, 519.6141749999999, 828.9829729999997, 533.29324)
-}
+# boxes = {
+#     'Aircraft Model': (40.033, 153.713675, 106.85308400000002, 480.04184),
+#     'Engine Model': (122.245, 153.71417500000032, 202.48306300000002, 480.04283999999996),
+#     'Light (A)': (225.902, 344.68397500000003, 363.00790699999993, 478.61283999999995),
+#     'Intermediate (C)': (371.023, 344.68397500000003, 506.30226999999996, 478.61283999999995),
+#     'Medium (4C)': (225.902, 151.794075, 362.507731, 297.74784),
+#     'Heavy (8C)': (371.738, 151.794075, 508.300607, 297.74784),
+#     'Additional information': (40.033, 58.313375, 829.6429730000018, 120.09204),
+#     'Airline Name': (554.748, 519.6141749999999, 828.9829729999997, 533.29324)
+# }
 
 
 all_page_data = []
@@ -46,7 +59,7 @@ for page in pages:
     for box_name, text in collected_text.items():
         print(f'{box_name} contains text: {text.strip()}')
     
-    for check_type in ['LIGHT(A)', 'Intermediate(C)', 'Medium (4C)', 'Heavy (8C)']:
+    for check_type in ['Light (A)', 'Intermediate (C)', 'Medium (4C)', 'Heavy (8C)']:
         row = {
                 "Year": 2022,
                 "Source": "Airbus",
@@ -55,7 +68,7 @@ for page in pages:
                 "Event Name": check_type,
                 "Mx Interval (FC/ FH/ MO)": collected_text[check_type].strip(),
                 "Airline": collected_text['Airline Name'].strip(),
-                "Additional information": collected_text['Additonal information'].strip()
+                "Additional information": collected_text['Additional information'].strip()
             }
         
         # Only add the row if there is data for the Mx Interval
